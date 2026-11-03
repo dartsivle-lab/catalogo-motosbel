@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-slate-900 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catálogo Interactivo de Vehículos</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            900: '#0c4a6e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glass-nav {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(16px);
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col font-sans antialiased bg-slate-950 text-slate-100 selection:bg-cyan-500 selection:text-white">
+
+    <!-- Header / Navbar -->
+    <header class="sticky top-0 z-50 glass-nav border-b border-slate-800/80">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="p-2.5 bg-gradient-to-tr from-cyan-500 to-blue-600 rounded-xl shadow-lg shadow-cyan-500/20 text-white">
+                    <i data-lucide="bike" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
+                        Catálogo de Vehículos
+                    </h1>
+                    <p class="text-xs text-slate-400 font-medium">Precios Finales Aplicados</p>
+                </div>
+            </div>
+
+            <!-- Stats Badge Quick View -->
+            <div class="hidden md:flex items-center space-x-6 text-sm border-l border-slate-800 pl-6">
+                <div class="flex items-center space-x-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-cyan-400"></span>
+                    <span class="text-slate-400">Modelos:</span>
+                    <span id="total-models-count" class="font-bold text-white">0</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+                    <span class="text-slate-400">Precio Promedio:</span>
+                    <span id="avg-price-val" class="font-bold text-white">$0</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+        <!-- Filter & Search Controls Bar -->
+        <div class="glass-card rounded-2xl p-4 sm:p-6 space-y-4">
+            <div class="flex flex-col lg:flex-row gap-4 justify-between items-stretch lg:items-center">
+                <!-- Search Input -->
+                <div class="relative flex-1">
+                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                        <i data-lucide="search" class="w-5 h-5"></i>
+                    </div>
+                    <input type="text" id="search-input" 
+                        placeholder="Buscar por modelo de vehículo..." 
+                        class="w-full pl-10 pr-10 py-3 bg-slate-900/90 border border-slate-700/80 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all">
+                    <button id="clear-search" class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-white">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+
+                <!-- Sort options -->
+                <div class="flex flex-wrap sm:flex-nowrap items-center gap-3">
+                    <div class="relative w-full sm:w-auto">
+                        <select id="sort-select" class="w-full appearance-none bg-slate-900/90 border border-slate-700/80 rounded-xl px-4 py-3 pr-10 text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 cursor-pointer">
+                            <option value="default">Orden Por Defecto</option>
+                            <option value="price-asc">Precio: Menor a Mayor</option>
+                            <option value="price-desc">Precio: Mayor a Menor</option>
+                            <option value="name-asc">Modelo: A - Z</option>
+                            <option value="name-desc">Modelo: Z - A</option>
+                        </select>
+                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400">
+                            <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                        </div>
+                    </div>
+
+                    <!-- View Switcher Toggle Buttons -->
+                    <div class="flex bg-slate-900/90 p-1 rounded-xl border border-slate-700/80 w-full sm:w-auto justify-center">
+                        <button id="view-grid-btn" title="Vista Tarjetas" class="flex-1 sm:flex-none p-2 rounded-lg text-cyan-400 bg-slate-800 transition-all">
+                            <i data-lucide="grid" class="w-5 h-5"></i>
+                        </button>
+                        <button id="view-table-btn" title="Vista Tabla" class="flex-1 sm:flex-none p-2 rounded-lg text-slate-400 hover:text-white transition-all">
+                            <i data-lucide="list" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Category Pills -->
+            <div class="flex items-center gap-2 overflow-x-auto pb-2 pt-1 no-scrollbar" id="category-pills">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+
+        <!-- Results Counter & Criteria Note -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center text-sm text-slate-400 gap-2 px-1">
+            <div>
+                Mostrando <span id="showing-count" class="font-semibold text-cyan-400">0</span> de <span id="total-count">0</span> resultados
+            </div>
+            <div class="flex items-center gap-2 text-xs bg-slate-900/60 px-3 py-1.5 rounded-lg border border-slate-800">
+                <i data-lucide="info" class="w-3.5 h-3.5 text-cyan-400"></i>
+                <span>Criterio: <strong class="text-slate-300">Precio Venta</strong> prioritario; respaldo <strong class="text-slate-300">Precio Cliente Final</strong>.</span>
+            </div>
+        </div>
+
+        <!-- Grid View Container -->
+        <div id="grid-view" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Cards populated by JS -->
+        </div>
+
+        <!-- Table View Container -->
+        <div id="table-view" class="hidden glass-card rounded-2xl overflow-hidden border border-slate-800">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead>
+                        <tr class="bg-slate-900/80 border-b border-slate-800 text-slate-400 uppercase text-xs tracking-wider">
+                            <th class="py-4 px-6 font-semibold">Imagen</th>
+                            <th class="py-4 px-6 font-semibold">Categoría</th>
+                            <th class="py-4 px-6 font-semibold">Modelo</th>
+                            <th class="py-4 px-6 font-semibold text-right">Precio Final Aplicado</th>
+                            <th class="py-4 px-6 font-semibold text-center">Origen</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body" class="divide-y divide-slate-800/60 text-slate-300">
+                        <!-- Table rows populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Empty State -->
+        <div id="empty-state" class="hidden glass-card rounded-2xl p-12 text-center space-y-4 max-w-md mx-auto my-12">
+            <div class="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto text-slate-400">
+                <i data-lucide="search-x" class="w-8 h-8"></i>
+            </div>
+            <h3 class="text-lg font-bold text-white">No se encontraron resultados</h3>
+            <p class="text-slate-400 text-sm">No encontramos vehículos que coincidan con tus criterios de búsqueda o filtro.</p>
+            <button id="reset-filters-btn" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-medium text-sm rounded-xl transition-all shadow-lg shadow-cyan-600/20">
+                Restablecer Filtros
+            </button>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-auto border-t border-slate-800/80 py-6 text-center text-xs text-slate-500">
+        <div class="max-w-7xl mx-auto px-4">
+            Catálogo Interactivo de Vehículos &bull; Precios y Modelos Actualizados
+        </div>
+    </footer>
+
+    <!-- JavaScript Data & Logic -->
+    <script>
+        const vehiclesData = [
+            { id: 1, category: "Motos Bel", model: "KEIKO 150", salePrice: 1340.00, clientPrice: 1217.00, image: "keiko 150.png" },
+            { id: 2, category: "Motos Bel", model: "NATSU 150", salePrice: 1540.00, clientPrice: 1361.00, image: "natsu 150.png" },
+            { id: 3, category: "Motos Bel", model: "TT 150", salePrice: 1900.00, clientPrice: 1704.00, image: "tt 150.png" },
+            { id: 4, category: "Motos Bel", model: "SAKI 150", salePrice: 1700.00, clientPrice: 1542.00, image: "saki 150.png" },
+            { id: 5, category: "Motos Bel", model: "RANGER 250", salePrice: 3180.00, clientPrice: 2813.00, image: "ranger 250.png" },
+            { id: 6, category: "Motos Bel", model: "RANGER 300", salePrice: 3350.00, clientPrice: 2981.00, image: "ranger 300.png" },
+            { id: 7, category: "Motos Bel", model: "VENECIA 150", salePrice: 1380.00, clientPrice: 1200.00, image: "venecia 150.png" },
+            { id: 8, category: "Motos Bel", model: "CUP 110", salePrice: 1970.00, clientPrice: 1744.00, image: "cup 110.png" },
+            { id: 9, category: "Bel by UM", model: "MAX 150", salePrice: 1560.00, clientPrice: 1396.00, image: "max 150.png" },
+            { id: 10, category: "Bel by UM", model: "NITROX SPORT 200", salePrice: 1680.00, clientPrice: 1489.00, image: "nitrox sport 200.png" },
+            { id: 11, category: "Bel by UM", model: "POWER MAX 150", salePrice: 2050.00, clientPrice: 1798.00, image: "power max 150.png" },
+            { id: 12, category: "Bel by UM", model: "FASTWIND 200", salePrice: 2230.00, clientPrice: 1973.00, image: "fastwind 200.png" },
+            { id: 13, category: "Bel by UM", model: "DSR 200", salePrice: 2240.00, clientPrice: 1953.00, image: "dsr 200.png" },
+            { id: 14, category: "Bel by UM", model: "BELLAGIO 150", salePrice: 1890.00, clientPrice: 1689.00, image: "bellagio 150.png" },
+            { id: 15, category: "Bel by UM", model: "DSR RALLY PRO 250", salePrice: 4800.00, clientPrice: 4288.00, image: "dsr rally pro 250.png" },
+            { id: 16, category: "Bel by UM", model: "ZOOM 150", salePrice: 1850.00, clientPrice: 1623.00, image: "zoom 150.png" },
+            { id: 17, category: "Bel by UM", model: "RENEGADE SPORT 200", salePrice: 3390.00, clientPrice: 2922.00, image: "renegade sport 200.png" },
+            { id: 18, category: "Bel by UM", model: "RENEGADE COMMANDO 250T", salePrice: 3900.00, clientPrice: 3389.00, image: "renegade commando 250t.png" },
+            { id: 19, category: "Bel by UM", model: "DSR HYPER SPORT 250", salePrice: 3730.00, clientPrice: 3252.00, image: "dsr hyper sport 250.png" },
+            { id: 20, category: "Trimotos", model: "KAMELLO 4X4 350", salePrice: null, clientPrice: 7647.00, image: "kamello 4x4 350.png" },
+            { id: 21, category: "Trimotos", model: "LA GANADERA 4X4 300", salePrice: null, clientPrice: 6979.00, image: "la ganadera 4x4 300.png" },
+            { id: 22, category: "Trimotos", model: "CHOPPER 250", salePrice: null, clientPrice: 4891.00, image: "chopper 250.png" },
+            { id: 23, category: "Trimotos", model: "MOTO-TANQUE 300", salePrice: null, clientPrice: 7819.00, image: "moto-tanque 300.png" },
+            { id: 24, category: "Trimotos", model: "AZUMI CAVA 250", salePrice: null, clientPrice: 5242.00, image: "azumi cava 250.png" },
+            { id: 25, category: "Trimotos", model: "AZUMI 200", salePrice: null, clientPrice: 3664.00, image: "azumi 200.png" },
+            { id: 26, category: "Trimotos", model: "LA MULA 200", salePrice: null, clientPrice: 3391.00, image: "la mula 200.png" },
+            { id: 27, category: "Trimotos", model: "LA ECO-MOTO 200", salePrice: null, clientPrice: 6067.00, image: "la eco-moto 200.png" },
+            { id: 28, category: "Trimotos", model: "LA GANADERA 250", salePrice: null, clientPrice: 7335.00, image: "la ganadera 250.png" },
+            { id: 29, category: "Trimotos", model: "LA VOLQUETA 300", salePrice: null, clientPrice: 6696.00, image: "la volqueta 300.png" },
+            { id: 30, category: "Trimotos", model: "MOTO SHOPPING 200", salePrice: null, clientPrice: 4989.00, image: "moto shopping 200.png" },
+            { id: 31, category: "Trimotos", model: "LA AMBULANCIA 250", salePrice: null, clientPrice: 7676.00, image: "la ambulancia 250.png" },
+            { id: 32, category: "ATV", model: "JIMMY 50 2T", salePrice: 700.00, clientPrice: 699.00, image: "jimmy 50 2t.png" },
+            { id: 33, category: "ATV", model: "JIMMY 125", salePrice: 1500.00, clientPrice: 1377.00, image: "jimmy 125.png" },
+            { id: 34, category: "ATV", model: "JIMMY 200", salePrice: null, clientPrice: 2450.00, image: "jimmy 200.png" },
+            { id: 35, category: "ATV", model: "JIMMY 200 XL", salePrice: null, clientPrice: 2850.00, image: "jimmy 200 xl.png" },
+            { id: 36, category: "ATV", model: "LANDFORCE 650", salePrice: null, clientPrice: 11651.00, image: "landforce 650.png" },
+            { id: 37, category: "ATV", model: "LANDFORCE 550", salePrice: null, clientPrice: 8326.00, image: "landforce 550.png" },
+            { id: 38, category: "ATV", model: "LANDFORCE 1000", salePrice: null, clientPrice: 14369.00, image: "landforce 1000.png" }
+        ];
+
+        // Process applied price logic
+        const processedData = vehiclesData.map(item => {
+            const hasSalePrice = item.salePrice !== null && item.salePrice !== undefined;
+            return {
+                ...item,
+                finalPrice: hasSalePrice ? item.salePrice : item.clientPrice,
+                priceSource: hasSalePrice ? 'Precio Venta' : 'Precio Cliente Final',
+                sourceType: hasSalePrice ? 'sale' : 'client'
+            };
+        });
+
+        // App State
+        let currentCategory = 'ALL';
+        let searchQuery = '';
+        let currentSort = 'default';
+        let currentView = 'grid';
+
+        // Formatters
+        const formatCurrency = (val) => {
+            if (val === null || val === undefined) return '-';
+            return new Intl.NumberFormat('es-VE', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(val).replace('USD', '$');
+        };
+
+        const categoryIcons = {
+            'Motos Bel': 'bike',
+            'Bel by UM': 'zap',
+            'Trimotos': 'truck',
+            'ATV': 'compass'
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderCategoryPills();
+            updateStats();
+            renderContent();
+            setupEventListeners();
+            lucide.createIcons();
+        });
+
+        function setupEventListeners() {
+            const searchInput = document.getElementById('search-input');
+            const clearSearchBtn = document.getElementById('clear-search');
+            
+            searchInput.addEventListener('input', (e) => {
+                searchQuery = e.target.value.toLowerCase().trim();
+                clearSearchBtn.classList.toggle('hidden', searchQuery === '');
+                renderContent();
+            });
+
+            clearSearchBtn.addEventListener('click', () => {
+                searchInput.value = '';
+                searchQuery = '';
+                clearSearchBtn.classList.add('hidden');
+                renderContent();
+            });
+
+            document.getElementById('sort-select').addEventListener('change', (e) => {
+                currentSort = e.target.value;
+                renderContent();
+            });
+
+            document.getElementById('view-grid-btn').addEventListener('click', () => setView('grid'));
+            document.getElementById('view-table-btn').addEventListener('click', () => setView('table'));
+
+            document.getElementById('reset-filters-btn').addEventListener('click', () => {
+                currentCategory = 'ALL';
+                searchQuery = '';
+                currentSort = 'default';
+                document.getElementById('search-input').value = '';
+                document.getElementById('sort-select').value = 'default';
+                document.getElementById('clear-search').classList.add('hidden');
+                renderCategoryPills();
+                renderContent();
+            });
+        }
+
+        function setView(view) {
+            currentView = view;
+            const gridContainer = document.getElementById('grid-view');
+            const tableContainer = document.getElementById('table-view');
+            const gridBtn = document.getElementById('view-grid-btn');
+            const tableBtn = document.getElementById('view-table-btn');
+
+            if (view === 'grid') {
+                gridContainer.classList.remove('hidden');
+                tableContainer.classList.add('hidden');
+                gridBtn.className = 'flex-1 sm:flex-none p-2 rounded-lg text-cyan-400 bg-slate-800 transition-all';
+                tableBtn.className = 'flex-1 sm:flex-none p-2 rounded-lg text-slate-400 hover:text-white transition-all';
+            } else {
+                gridContainer.classList.add('hidden');
+                tableContainer.classList.remove('hidden');
+                tableBtn.className = 'flex-1 sm:flex-none p-2 rounded-lg text-cyan-400 bg-slate-800 transition-all';
+                gridBtn.className = 'flex-1 sm:flex-none p-2 rounded-lg text-slate-400 hover:text-white transition-all';
+            }
+        }
+
+        function renderCategoryPills() {
+            const categories = ['ALL', ...new Set(processedData.map(item => item.category))];
+            const container = document.getElementById('category-pills');
+            
+            container.innerHTML = categories.map(cat => {
+                const isActive = currentCategory === cat;
+                const label = cat === 'ALL' ? 'Todos' : cat;
+                const icon = categoryIcons[cat] || 'layers';
+                
+                return `
+                    <button 
+                        onclick="selectCategory('${cat}')"
+                        class="flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+                            isActive 
+                            ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/25 ring-2 ring-cyan-400/50' 
+                            : 'bg-slate-900/80 text-slate-400 hover:bg-slate-800 hover:text-white border border-slate-800'
+                        }">
+                        ${cat !== 'ALL' ? `<i data-lucide="${icon}" class="w-3.5 h-3.5"></i>` : ''}
+                        <span>${label}</span>
+                    </button>
+                `;
+            }).join('');
+            
+            lucide.createIcons();
+        }
+
+        window.selectCategory = function(cat) {
+            currentCategory = cat;
+            renderCategoryPills();
+            renderContent();
+        };
+
+        function getFilteredAndSortedData() {
+            let result = processedData.filter(item => {
+                const matchesCategory = currentCategory === 'ALL' || item.category === currentCategory;
+                const matchesSearch = item.model.toLowerCase().includes(searchQuery) || 
+                                      item.category.toLowerCase().includes(searchQuery);
+                return matchesCategory && matchesSearch;
+            });
+
+            switch (currentSort) {
+                case 'price-asc':
+                    result.sort((a, b) => a.finalPrice - b.finalPrice);
+                    break;
+                case 'price-desc':
+                    result.sort((a, b) => b.finalPrice - a.finalPrice);
+                    break;
+                case 'name-asc':
+                    result.sort((a, b) => a.model.localeCompare(b.model));
+                    break;
+                case 'name-desc':
+                    result.sort((a, b) => b.model.localeCompare(a.model));
+                    break;
+                default:
+                    result.sort((a, b) => a.id - b.id);
+            }
+
+            return result;
+        }
+
+        function updateStats() {
+            const total = processedData.length;
+            const prices = processedData.map(d => d.finalPrice);
+            const avgPrice = prices.reduce((a, b) => a + b, 0) / total;
+
+            document.getElementById('total-models-count').textContent = total;
+            document.getElementById('avg-price-val').textContent = formatCurrency(avgPrice);
+        }
+
+        function renderContent() {
+            const filtered = getFilteredAndSortedData();
+            
+            document.getElementById('showing-count').textContent = filtered.length;
+            document.getElementById('total-count').textContent = processedData.length;
+
+            const gridContainer = document.getElementById('grid-view');
+            const tableBody = document.getElementById('table-body');
+            const emptyState = document.getElementById('empty-state');
+
+            if (filtered.length === 0) {
+                gridContainer.classList.add('hidden');
+                document.getElementById('table-view').classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+
+            if (currentView === 'grid') {
+                gridContainer.classList.remove('hidden');
+            } else {
+                document.getElementById('table-view').classList.remove('hidden');
+            }
+
+            // Render Grid Cards
+            gridContainer.innerHTML = filtered.map(item => `
+                <div class="glass-card rounded-2xl p-5 flex flex-col justify-between hover:border-slate-700/80 transition-all hover:translate-y-[-2px] group">
+                    <div class="space-y-4">
+                        <div class="relative w-full h-48 bg-slate-900/80 rounded-xl overflow-hidden flex items-center justify-center p-2 border border-slate-800">
+                            <img src="${item.image}" alt="${item.model}" 
+                                 class="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300"
+                                 onerror="this.onerror=null; this.src='https://placehold.co/400x300/0f172a/94a3b8?text=${encodeURIComponent(item.model)}';">
+                        </div>
+
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold uppercase tracking-wider px-3 py-1 rounded-full bg-slate-800/80 text-cyan-400 border border-slate-700/50 flex items-center gap-1.5">
+                                <i data-lucide="${categoryIcons[item.category] || 'tag'}" class="w-3 h-3"></i>
+                                ${item.category}
+                            </span>
+                            
+                            <span class="text-[11px] font-medium px-2.5 py-1 rounded-md border flex items-center gap-1 ${
+                                item.sourceType === 'sale' 
+                                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
+                                : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                            }">
+                                <i data-lucide="${item.sourceType === 'sale' ? 'check' : 'alert-circle'}" class="w-3 h-3"></i>
+                                ${item.priceSource}
+                            </span>
+                        </div>
+
+                        <div>
+                            <h3 class="text-xl font-bold text-white group-hover:text-cyan-400 transition-colors">${item.model}</h3>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 pt-4 border-t border-slate-800/80 flex justify-between items-baseline">
+                        <span class="text-xs text-slate-400">Precio Final:</span>
+                        <span class="text-2xl font-extrabold text-white tracking-tight">${formatCurrency(item.finalPrice)}</span>
+                    </div>
+                </div>
+            `).join('');
+
+            // Render Table Rows
+            tableBody.innerHTML = filtered.map(item => `
+                <tr class="hover:bg-slate-800/40 transition-colors">
+                    <td class="py-3 px-6">
+                        <div class="w-12 h-12 bg-slate-900 rounded-lg p-1 border border-slate-800 flex items-center justify-center">
+                            <img src="${item.image}" alt="${item.model}" class="max-h-full max-w-full object-contain"
+                                 onerror="this.onerror=null; this.src='https://placehold.co/100x100/0f172a/94a3b8?text=Moto';">
+                        </div>
+                    </td>
+                    <td class="py-4 px-6">
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-800 text-xs text-cyan-400 font-medium">
+                            <i data-lucide="${categoryIcons[item.category] || 'tag'}" class="w-3 h-3"></i>
+                            ${item.category}
+                        </span>
+                    </td>
+                    <td class="py-4 px-6 font-bold text-white">${item.model}</td>
+                    <td class="py-4 px-6 text-right font-mono font-bold text-cyan-400 text-base">${formatCurrency(item.finalPrice)}</td>
+                    <td class="py-4 px-6 text-center">
+                        <span class="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-md border font-medium ${
+                            item.sourceType === 'sale' 
+                            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
+                            : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                        }">
+                            <i data-lucide="${item.sourceType === 'sale' ? 'check' : 'alert-circle'}" class="w-3 h-3"></i>
+                            ${item.priceSource}
+                        </span>
+                    </td>
+                </tr>
+            `).join('');
+
+            lucide.createIcons();
+        }
+    </script>
+</body>
+</html>
